@@ -97,7 +97,7 @@ def get_args_parser():
     parser.add_argument('--distributed', action='store_true')
     parser.add_argument('--world_size', default=1, type=int,
                         help='number of distributed processes')
-    parser.add_argument('--local_rank', default=-1, type=int)
+    parser.add_argument('--local-rank', default=-1, type=int)
     parser.add_argument('--dist_on_itp', action='store_true')
     parser.add_argument('--dist_url', default='env://',
                         help='url used to set up distributed training')
@@ -195,7 +195,7 @@ def main(args):
             log_writer=log_writer,
             args=args
         )
-        if args.output_dir and (epoch % 20 == 0 or epoch + 1 == args.epochs):
+        if args.output_dir and (epoch + 1 == args.epochs):
             misc.save_model(
                 args=args, model=model, model_without_ddp=model_without_ddp, optimizer=optimizer,
                 loss_scaler=loss_scaler, epoch=epoch)

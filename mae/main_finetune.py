@@ -145,9 +145,10 @@ def get_args_parser():
     parser.set_defaults(pin_mem=True)
 
     # distributed training parameters
+    parser.add_argument('--distributed', action='store_true')
     parser.add_argument('--world_size', default=1, type=int,
                         help='number of distributed processes')
-    parser.add_argument('--local_rank', default=-1, type=int)
+    parser.add_argument('--local-rank', default=-1, type=int)
     parser.add_argument('--dist_on_itp', action='store_true')
     parser.add_argument('--dist_url', default='env://',
                         help='url used to set up distributed training')
@@ -173,7 +174,7 @@ def main(args):
     dataset_train = build_dataset(is_train=True, args=args)
     dataset_val = build_dataset(is_train=False, args=args)
 
-    if True:  # args.distributed:
+    if args.distributed:  # args.distributed:
         num_tasks = misc.get_world_size()
         global_rank = misc.get_rank()
         sampler_train = torch.utils.data.DistributedSampler(
@@ -317,14 +318,15 @@ def main(args):
             log_writer=log_writer,
             args=args
         )
-        if args.output_dir:
-            misc.save_model(
-                args=args, model=model, model_without_ddp=model_without_ddp, optimizer=optimizer,
-                loss_scaler=loss_scaler, epoch=epoch)
-
         test_stats = evaluate(data_loader_val, model, device)
         print(f"Accuracy of the network on the {len(dataset_val)} test images: {test_stats['acc1']:.1f}%")
-        max_accuracy = max(max_accuracy, test_stats["acc1"])
+        if args.output_dir and (test_stats["acc1"] > max_accuracy):
+            misc.save_model(
+                args=args, model=model, model_without_ddp=model_without_ddp, optimizer=optimizer,
+                loss_scaler=loss_scaler, epoch='best')
+            max_accuracy = test_stats["acc1"] 
+        # max_accuracy = max(max_accuracy, test_stats["acc1"])
+
         print(f'Max accuracy: {max_accuracy:.2f}%')
 
         if log_writer is not None:
